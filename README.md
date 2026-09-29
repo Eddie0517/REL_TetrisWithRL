@@ -56,6 +56,7 @@ $$\mathcal{R} = w_1 \cdot (\text{Lines})^2 - w_2 \cdot \Delta \text{Holes} - w_3
 REL_TetrisWithRL/
 ├── checkpoints/             # Lưu trữ trọng số mô hình đã huấn luyện (best_model.pth, latest_model.pth)
 ├── reports/                 # Báo cáo kết quả và biểu đồ benchmark
+│   ├── EVALUATION_REPORT.md # Báo cáo đánh giá hiệu suất mô hình và bảng chỉ số chi tiết
 │   └── figures/             # Biểu đồ so sánh (benchmark_comparison.png, benchmark_results.json)
 ├── logs/                    # TensorBoard logs giám sát tiến trình huấn luyện
 ├── src/                     # Toàn bộ mã nguồn module Reinforcement Learning (PyTorch)
