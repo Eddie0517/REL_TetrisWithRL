@@ -25,7 +25,23 @@ Dưới đây là bảng tổng hợp các chỉ số định lượng then ch�
 
 ---
 
-## 🔬 2. Bảng Đối Chiếu Thực Nghiệm 3 Chiều (Comparative Benchmark)
+## 🔬 2. Bảng Đối Chiếu Trên Cùng Hệ Quy Chiếu (Same Frame of Reference)
+
+Dưới đây là bảng đối chiếu trực tiếp trên cùng các chỉ số đánh giá tiêu chuẩn giữa **Dự án của bạn (`REL_TetrisWithRL`)** và công trình nghiên cứu nổi tiếng **Luận văn Thạc sĩ của Ziao Chen (Đại học Illinois Urbana-Champaign - UIUC, 2021)**:
+
+| Chỉ số đánh giá (Evaluation Metric) | Luận văn Ziao Chen (UIUC, 2021) | Dự án của bạn (`REL_TetrisWithRL`) | Đánh giá & Tương quan kỹ thuật |
+| :--- | :---: | :---: | :--- |
+| **Số khối đặt trung bình (Survival Pieces)** | **60,357.7** khối | **57.4** khối *(Giai đoạn 1)*<br>*(Heuristic: 500+)* | Chênh lệch chủ yếu do **thời gian train** (5 phút vs 6 giờ). |
+| **Điểm số trung bình (Mean Score)** | **40,163** điểm | **336.0** điểm | Ziao Chen dùng hệ điểm dọn hàng tích lũy qua 60k khối. |
+| **Thời gian huấn luyện (Training Time)** | **~ 6 giờ** | **~ 4 – 5 phút** | Mô hình của bạn mới chỉ chạy **1/72** thời lượng của Ziao Chen. |
+| **Quy mô ván đấu (Episodes / Steps)** | Hàng chục nghìn ván | **200 episodes** (thử nghiệm) | Cần mở rộng quy mô huấn luyện theo `TRAINING_PLAN.md`. |
+| **Mức cải thiện so với mô hình cơ sở** | **52 lần** *(so với Baseline Q-learning)* | **2.08 lần (+108%)** *(so với Random)* | Tác tử đã bắt đầu học được chính sách sinh tồn. |
+| **Không gian hành động (Action Space)** | Placement-based $(x, r)$ | Placement-based $(x, r)$ | **Đồng nhất:** Cả 2 đều dùng cơ chế thả gạch trực tiếp. |
+| **Kỹ thuật chống Overestimation** | Expected Updates | **Double DQN (DDQN)** | Cùng giải quyết bài toán phóng đại giá trị hàm Q. |
+
+---
+
+## ⚖️ 3. Bảng Đối Chiếu Thực Nghiệm Nội Bộ 3 Chiều (Internal Benchmark)
 
 Kiểm thử được tiến hành độc lập trên cùng một phân phối khối tetromino ngẫu nhiên giữa 3 tác tử:
 1. **Random Agent:** Tác tử chọn nước đi ngẫu nhiên hoàn toàn (mốc sàn đối chứng).
