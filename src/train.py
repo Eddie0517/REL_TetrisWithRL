@@ -51,7 +51,7 @@ def train(args):
     )
 
     start_episode = 1
-    best_lines = 0
+    best_lines = 17 if os.path.exists(os.path.join(args.checkpoint_dir, "best_model.pth")) else 0
 
     if args.resume and os.path.exists(args.resume):
         print(f"Loading checkpoint from {args.resume}...", flush=True)
