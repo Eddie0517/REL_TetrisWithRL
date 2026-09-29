@@ -1,4 +1,4 @@
-from .heuristic_agent import HeuristicAgent
+from .heuristic_agent import HeuristicAgent, NaiveGreedyAgent
 from .dqn_agent import DQNAgent
 
-__all__ = ["HeuristicAgent", "DQNAgent"]
+__all__ = ["HeuristicAgent", "NaiveGreedyAgent", "DQNAgent"]

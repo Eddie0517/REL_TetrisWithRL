@@ -1,5 +1,5 @@
 {
-  "Random Agent": {
+  "Random Baseline (Demaine 2002)": {
     "games": 5,
     "mean_lines": 0.0,
     "std_lines": 0.0,
@@ -9,7 +9,7 @@
     "mean_score": 0.0,
     "std_score": 0.0,
     "max_score": 0,
-    "mean_steps": 27.6,
+    "mean_steps": 22.4,
     "raw_lines": [
       0,
       0,
@@ -24,60 +24,87 @@
       0,
       0
     ],
-    "time_elapsed": 1.2688939571380615
+    "time_elapsed": 2.941790819168091
   },
-  "Heuristic (Dellacherie)": {
+  "Naive Greedy (Fahey 2003)": {
     "games": 5,
-    "mean_lines": 195.8,
-    "std_lines": 1.32664991614216,
-    "max_lines": 198,
-    "min_lines": 194,
+    "mean_lines": 12.2,
+    "std_lines": 7.467261881037788,
+    "max_lines": 25,
+    "min_lines": 4,
+    "median_lines": 11.0,
+    "mean_score": 520.0,
+    "std_score": 310.6122985330748,
+    "max_score": 1040,
+    "mean_steps": 68.6,
+    "raw_lines": [
+      15,
+      4,
+      6,
+      11,
+      25
+    ],
+    "raw_scores": [
+      640,
+      160,
+      260,
+      500,
+      1040
+    ],
+    "time_elapsed": 9.253567934036255
+  },
+  "Proposed DDQN Agent": {
+    "games": 5,
+    "mean_lines": 6.0,
+    "std_lines": 1.6733200530681511,
+    "max_lines": 9,
+    "min_lines": 4,
+    "median_lines": 6.0,
+    "mean_score": 244.0,
+    "std_score": 67.40919818541087,
+    "max_score": 360,
+    "mean_steps": 51.4,
+    "raw_lines": [
+      9,
+      6,
+      6,
+      4,
+      5
+    ],
+    "raw_scores": [
+      360,
+      260,
+      240,
+      160,
+      200
+    ],
+    "time_elapsed": 8.02311372756958
+  },
+  "Expert Heuristic (Dellacherie 2003)": {
+    "games": 5,
+    "mean_lines": 196.6,
+    "std_lines": 1.624807680927192,
+    "max_lines": 199,
+    "min_lines": 195,
     "median_lines": 196.0,
-    "mean_score": 8532.0,
-    "std_score": 270.5845524046042,
-    "max_score": 9020,
+    "mean_score": 8840.0,
+    "std_score": 622.2539674441618,
+    "max_score": 9620,
     "mean_steps": 500.0,
     "raw_lines": [
-      194,
+      199,
       195,
       198,
-      196,
+      195,
       196
     ],
     "raw_scores": [
-      8440,
-      8600,
-      8240,
-      9020,
-      8360
+      9580,
+      8340,
+      9620,
+      8260,
+      8400
     ],
-    "time_elapsed": 31.40720772743225
-  },
-  "DDQN Agent": {
-    "games": 5,
-    "mean_lines": 8.4,
-    "std_lines": 4.841487374764082,
-    "max_lines": 17,
-    "min_lines": 3,
-    "median_lines": 6.0,
-    "mean_score": 336.0,
-    "std_score": 193.65949499056327,
-    "max_score": 680,
-    "mean_steps": 57.4,
-    "raw_lines": [
-      6,
-      3,
-      10,
-      6,
-      17
-    ],
-    "raw_scores": [
-      240,
-      120,
-      400,
-      240,
-      680
-    ],
-    "time_elapsed": 2.7026021480560303
+    "time_elapsed": 84.41458415985107
   }
 }

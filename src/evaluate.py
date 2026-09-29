@@ -21,7 +21,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from src.env.tetris_env import TetrisEnv
-from src.agents.heuristic_agent import HeuristicAgent
+from src.agents.heuristic_agent import HeuristicAgent, NaiveGreedyAgent
 from src.agents.dqn_agent import DQNAgent
 
 
@@ -66,17 +66,19 @@ def evaluate(args):
 
     agents = {}
     if not args.skip_random:
-        agents["Random Agent"] = (RandomAgent(), False)
+        agents["Random Baseline (Demaine 2002)"] = (RandomAgent(), False)
 
-    if not args.skip_heuristic:
-        agents["Heuristic (Dellacherie)"] = (HeuristicAgent(), False)
+    agents["Naive Greedy (Fahey 2003)"] = (NaiveGreedyAgent(), False)
 
     if os.path.exists(args.model_path):
         dqn_agent = DQNAgent(state_dim=4, device=args.device)
         dqn_agent.load(args.model_path)
-        agents["DDQN Agent"] = (dqn_agent, True)
+        agents["Proposed DDQN Agent"] = (dqn_agent, True)
     else:
         print(f"Warning: Model file '{args.model_path}' not found. Skipping DDQN Agent evaluation.")
+
+    if not args.skip_heuristic:
+        agents["Expert Heuristic (Dellacherie 2003)"] = (HeuristicAgent(), False)
 
     results = {}
 
@@ -147,8 +149,8 @@ def generate_charts(results, output_file):
     if not names:
         return
 
-    fig, axes = plt.subplots(1, 2, figsize=(12, 5))
-    colors = ["#94a3b8", "#38bdf8", "#a855f7"]
+    fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+    colors = ["#94a3b8", "#f59e0b", "#38bdf8", "#a855f7"]
 
     # 1. Bar Chart: Mean Cleared Lines
     mean_lines = [results[n]["mean_lines"] for n in names]
@@ -157,6 +159,7 @@ def generate_charts(results, output_file):
     axes[0].bar(names, mean_lines, yerr=std_lines, capsize=5, color=colors[: len(names)], alpha=0.85)
     axes[0].set_title("Average Cleared Lines per Game (Higher is better)", fontsize=12, fontweight="bold")
     axes[0].set_ylabel("Cleared Lines")
+    axes[0].tick_params(axis='x', labelrotation=15)
     axes[0].grid(axis="y", linestyle="--", alpha=0.5)
 
     for i, v in enumerate(mean_lines):
@@ -167,6 +170,7 @@ def generate_charts(results, output_file):
     axes[1].boxplot(data_to_plot, tick_labels=names, patch_artist=True)
     axes[1].set_title("Cleared Lines Distribution (Boxplot)", fontsize=12, fontweight="bold")
     axes[1].set_ylabel("Cleared Lines")
+    axes[1].tick_params(axis='x', labelrotation=15)
     axes[1].grid(axis="y", linestyle="--", alpha=0.5)
 
     plt.tight_layout()
@@ -176,8 +180,8 @@ def generate_charts(results, output_file):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Evaluate and Benchmark Tetris Agents")
-    parser.add_argument("--games", type=int, default=10, help="Number of games to evaluate per agent")
-    parser.add_argument("--max-steps", type=int, default=5000, help="Max steps per game to avoid infinite loops")
+    parser.add_argument("--games", type=int, default=5, help="Number of games to evaluate per agent")
+    parser.add_argument("--max-steps", type=int, default=500, help="Max steps per game to avoid infinite loops")
     parser.add_argument("--model-path", type=str, default="checkpoints/best_model.pth", help="Trained model path")
     parser.add_argument("--output-dir", type=str, default="reports/figures", help="Directory for reports and plots")
     parser.add_argument("--device", type=str, default="cpu", help="Device (cpu or cuda)")

@@ -32,3 +32,14 @@ class HeuristicAgent:
                 best_action = action
 
         return best_action
+
+
+class NaiveGreedyAgent(HeuristicAgent):
+    """
+    Lower-performing baseline (Fahey 2003 / Stevens 2016 baseline):
+    Only greedily minimizes aggregate height and maximizes cleared lines,
+    completely ignoring holes and bumpiness. This causes fatal trapped holes.
+    """
+    def __init__(self):
+        super().__init__(weight_height=-1.0, weight_holes=0.0, weight_bumpiness=0.0, weight_lines=1.0)
+
