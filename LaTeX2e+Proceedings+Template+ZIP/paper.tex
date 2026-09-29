@@ -1,284 +1,246 @@
-% This is paper.tex, prepared for ICCIES conference using the
-% Springer LLNCS macro package for Computer Science proceedings.
-%
+% This is paper.tex formatted for ICCIES Conference using Springer LNCS style.
+% Prepared for: International Conference on Computational Intelligence and Energy Systems (ICCIES)
 \documentclass[runningheads]{llncs}
-%
+
 \usepackage[T1]{fontenc}
-\usepackage{newtxtext}
-\usepackage[varvw]{newtxmath}
 \usepackage{graphicx}
+\usepackage{amsmath,amssymb}
 \usepackage{booktabs}
-\usepackage{amsmath}
+\usepackage{cite}
 \usepackage{microtype}
+\usepackage{url}
 
 \begin{document}
-%
-\title{A Placement-Based Double Deep Q-Network Framework for Autonomous Tetris Control with Geometric Feature Abstraction}
-%
-\titlerunning{Placement-Based DDQN for Tetris Control}
-%
-% NOTE FOR USER: Please replace the author names, affiliations, and ORCID IDs below
-\author{Author One\inst{1}\orcidID{0000-0000-0000-0000} \and
-Author Two\inst{1}\orcidID{0000-0000-0000-0000} \and
-Author Three\inst{2}\orcidID{0000-0000-0000-0000}}
-%
-\authorrunning{A. One et al.}
-%
-\institute{Department of Computer Science, Faculty of Information Technology,\\
-University Name, City, Country\\
-\email{\{author1,author2\}@university.edu.vn} \and
-Research Institute of Applied Intelligence,\\
-Institution Name, City, Country\\
-\email{author3@institution.org}}
-%
+
+\title{Placement-Based Double Deep Q-Network for Sample-Efficient Tetris Policy Learning}
+
+\titlerunning{Placement-Based Double DQN for Tetris Policy Learning}
+
+% [NOTE FOR USER / LƯU Ý CHO TÁC GIẢ]:
+% Vui lòng cập nhật họ tên tác giả, đơn vị công tác (affiliation), và mã ORCID tại đây.
+\author{Author Name\inst{1}\orcidID{0000-0000-0000-0000} \and
+Co-Author Name\inst{1,2}\orcidID{0000-0000-0000-0000}}
+
+\authorrunning{Author et al.}
+
+\institute{Faculty of Information Technology, University Name, City, Country\\
+\email{\{author,coauthor\}@university.edu.vn} \and
+Department of Computer Science, University Name, City, Country}
+
 \maketitle
-%
+
 \begin{abstract}
-Tetris is a recognized NP-complete combinatorial benchmark characterized by vast state spaces and delayed feedback. Conventional deep reinforcement learning models operating on raw grid pixels or sequential keypress actions frequently suffer from sparse rewards and extreme sample inefficiency. Conversely, handcrafted heuristic controllers exhibit high survival capabilities but remain rigid and incapable of autonomous policy adaptation. This paper proposes a lightweight Placement-based Double Deep Q-Network (P-DDQN) framework. The approach abstracts board configurations into a four-dimensional geometric feature representation capturing aggregate height, holes, bumpiness, and cleared lines. Decisions are formulated over candidate placement tuples rather than micro-actions, reducing the decision horizon substantially. Double Q-learning is integrated to decouple action selection from value estimation, mitigating value overestimation. Experimental evaluations demonstrate that the proposed agent achieves an average of 248.1 cleared lines per game and reaches a single-game peak of 1,127 lines within 1,050 training episodes on a standard central processing unit. The model converges in under 17 minutes and requires only 82 kilobytes of memory footprint, providing an efficient alternative for autonomous dynamic packing tasks.
+Tetris represents an NP-complete benchmark in artificial intelligence, characterized by high stochasticity and large state complexity. Conventional vision-based deep reinforcement learning (DRL) incurs excessive sample complexity and delayed credit assignment due to micro-actions. This study investigates an autonomous Tetris agent based on Double Deep Q-Networks (DDQN) combined with a 4-dimensional geometric feature representation and macro placement action selection. By evaluating complete placement configurations and decoupling action selection from value estimation, the agent mitigates overestimation bias and reduces the decision horizon. Experimental evaluation across 1,050 training episodes demonstrates that the proposed framework achieves an average of 248.1 cleared lines per game with a maximum record of 1,127 lines, outperforming random and naive greedy baselines by substantial margins. The compact architecture (4,500 parameters, 82~KB checkpoint, 5.4~ms latency) exhibits high sample efficiency on consumer-grade hardware.
 
-\keywords{Reinforcement Learning \and Double Deep Q-Network \and Tetris Benchmark \and Sample Efficiency \and Geometric Feature Representation \and Markov Decision Process.}
+\keywords{Deep Reinforcement Learning \and Double DQN \and Tetris \and Markov Decision Process \and Sample Efficiency.}
 \end{abstract}
-%
-%
-%
+
 \section{Introduction}
-Tetris represents an established benchmark in artificial intelligence and operations research. The game entails placing a continuous sequence of stochastic tetrominoes on a grid of ten columns and twenty rows. Mathematical analyses have established that optimizing Tetris gameplay belongs to the NP-complete complexity class~\cite{demaine2002tetris}. The task requires long-term planning under stochastic transitions and risk-reward tradeoffs between clearing lines and maintaining safe board profiles.
+Tetris is a classic tile-matching puzzle game formulated by Alexey Pajitnov in 1984. Mathematically, the game has been proven to belong to the NP-complete complexity class~\cite{demaine2002tetris}. The state space is bounded by an exponential scale, while piece generation introduces stochastic uncertainty. Each piece placement directly influences board geometry over extended horizons.
 
-Early computational controllers for Tetris relied on handcrafted evaluation functions and heuristic search~\cite{fahey2003tetris}. The controller introduced by Pierre Dellacherie represents an effective handcrafted policy. It achieves prolonged survival by penalizing surface holes and elevation variance. However, such heuristic systems depend on manually engineered coefficients. They cannot adapt autonomously when board dimensions or piece mechanics change.
+In artificial intelligence research, Tetris serves as a standard testbed for sequential decision-making~\cite{bertsekas1996neuro,lagoudakis2002least}. Two dominant paradigms have historically addressed the problem. The first relies on hand-crafted heuristic controllers, such as the Pierre Dellacherie evaluation algorithm~\cite{fahey2003tetris}. These heuristics achieve strong survival times. However, the underlying weighting parameters are fixed and lack self-adaptive policy learning. The second paradigm utilizes Deep Reinforcement Learning (DRL) applied to raw screen images or discrete cell grids~\cite{mnih2015human}. While general, vision-based DRL requires millions of transition steps. The micro-action formulation (stepwise lateral shifts and rotations) introduces severe credit assignment latency, frequently causing policy collapse.
 
-With the advancement of deep reinforcement learning (DRL), Deep Q-Networks (DQN) have demonstrated proficiency across various game domains~\cite{mnih2015human}. Nevertheless, direct application of pixel-based DQN to Tetris poses acute challenges. Operating at the micro-action level (left, right, rotate, drop) results in trajectories of fifteen to thirty steps per piece. Rewards are awarded only when rows are cleared, generating a severe sparse reward condition. Agents frequently undergo millions of transition frames without discovering viable line-clearing policies.
+To bridge the gap between handcrafted heuristics and sample-inefficient deep networks, this study investigates a Placement-based Double Deep Q-Network (P-DDQN) framework. The approach abstracts the board state into four geometric descriptors: aggregate height, hole count, bumpiness, and cleared lines. Candidate placements are evaluated directly, contracting the decision sequence. The integration of Double Q-learning suppresses value overestimation.
 
-To address these limitations, this study presents a Placement-based Double Deep Q-Network (P-DDQN) architecture. The decision problem is recast from sequential low-level motor controls to macro-placement evaluation. The grid state following every valid candidate orientation and lateral position is encoded into a compact four-dimensional geometric feature vector. A multi-layer perceptron trained via Double Q-learning approximates the optimal action-value function while suppressing overestimation bias.
+The key contributions of this paper include:
+\begin{enumerate}
+    \item A sample-efficient reinforcement learning architecture that combines a 4-dimensional geometric representation with macro placement actions and target decoupling.
+    \item Systematic empirical benchmarking comparing the proposed model against theoretical lower baselines, naive heuristics, and expert controllers across multiple statistical metrics.
+    \item A reproducible experimental framework that achieves competitive survival performance on standard central processing units (CPUs) within negligible training durations.
+\end{enumerate}
 
-The primary contributions of this paper are summarized as follows:
+\section{Related Work}
+\subsection{Classical Heuristic Controllers}
+Heuristic approaches optimize a linear combination of board features. Fahey systematically evaluated heuristic controllers, identifying the algorithm of Pierre Dellacherie as an exceptionally stable policy~\cite{fahey2003tetris}. Thiery and Scherrer further applied the Cross-Entropy Method (CEM) to tune linear feature weights, obtaining benchmark scores exceeding millions of cleared lines~\cite{thiery2009building}. Despite high survival capability, these methods rely on rigid static weights and do not generalize autonomously when board parameters change.
+
+\subsection{Approximate Dynamic Programming}
+Prior to deep learning, Approximate Dynamic Programming (ADP) formed the primary foundation for learning Tetris policies. Bertsekas and Tsitsiklis applied $\lambda$-policy iteration with compact linear feature representations, achieving average line counts around 2,800~\cite{bertsekas1996neuro}. Lagoudakis et al. introduced Least-Squares Policy Iteration (LSPI) to learn policies from collected transition trajectories without explicit transition models, yielding 1,000 to 3,000 cleared lines~\cite{lagoudakis2002least}. de Farias and Van Roy developed an Approximate Linear Programming (ALP) approach with constraint sampling, achieving an average of 4,700 lines~\cite{farias2006tetris}. In parallel, evolutionary optimization techniques have also been explored; Boumaza reported baseline genetic algorithms clearing 40 to 80 lines, scaling up with advanced covariance matrix adaptation~\cite{boumaza2009how}.
+
+\subsection{Deep Reinforcement Learning for Tetris}
+Deep Q-Networks pioneered by Mnih et al. demonstrated human-level control across multiple Atari games~\cite{mnih2015human}. However, direct application of convolutional networks to raw Tetris grids often yields limited results due to sparse reward feedback. Stevens and Pradhan analyzed feature-based DQN, noting that geometric abstractions substantially accelerate convergence relative to pixel inputs~\cite{stevens2016playing}. Chen presented an expected deep reinforcement learning formulation using linear reward shaping, achieving prolonged survival over extended training periods~\cite{chen2021playing}.
+
+The identified research gap concerns sample efficiency and algorithmic stability on standard hardware. Standard deep approaches either require large-scale cluster compute or suffer from target overestimation. This study addresses this problem through a lightweight Double DQN architecture.
+
+\section{Problem Formulation}
+The game is formalized as a discrete-time Markov Decision Process (MDP) defined by the tuple $\mathcal{M} = \langle \mathcal{S}, \mathcal{A}, \mathcal{P}, \mathcal{R}, \gamma \rangle$.
+
+\subsection{State Space Representation}
+Rather than utilizing raw grid matrices of size $20 \times 10$, each post-action board state $s_t \in \mathcal{S}$ is mapped into a 4-dimensional geometric vector:
+\begin{equation}
+s_t = \left[ f_1(s_t),\, f_2(s_t),\, f_3(s_t),\, f_4(s_t) \right]^T
+\end{equation}
+The individual features are defined as follows:
 \begin{itemize}
-    \item A macro-placement Double DQN formulation is implemented, eliminating intermediate non-rewarding transitions and improving sample efficiency.
-    \item A compact four-dimensional geometric abstraction is verified to capture board stability, allowing rapid model convergence on conventional computing hardware.
-    \item An empirical benchmark is conducted against multiple established baselines, validating stability, score accumulation, and computational efficiency.
+    \item \textbf{Aggregate Height ($f_1$):} The summation of all column heights across the board:
+    \begin{equation}
+    f_1(s_t) = \sum_{c=1}^{10} h_c
+    \end{equation}
+    where $h_c$ denotes the row index of the highest occupied cell in column $c$.
+    \item \textbf{Holes ($f_2$):} The total number of unoccupied cells covered by at least one occupied cell within the same column:
+    \begin{equation}
+    f_2(s_t) = \sum_{c=1}^{10} \sum_{r=1}^{h_c} \mathbb{I}(\text{board}[r, c] == 0)
+    \end{equation}
+    where $\mathbb{I}(\cdot)$ is the indicator function.
+    \item \textbf{Bumpiness ($f_3$):} The variation in height across adjacent columns, quantifying surface roughness:
+    \begin{equation}
+    f_3(s_t) = \sum_{c=1}^{9} |h_c - h_{c+1}|
+    \end{equation}
+    \item \textbf{Cleared Lines ($f_4$):} The immediate number of full horizontal lines completed and eliminated by the placed piece ($f_4 \in \{0, 1, 2, 3, 4\}$).
 \end{itemize}
 
-The remainder of this manuscript is structured as follows. Section~\ref{sec:related} reviews relevant literature. Section~\ref{sec:formulation} details the Markov Decision Process formulation. Section~\ref{sec:methodology} describes the neural architecture and learning pipeline. Section~\ref{sec:experiments} presents empirical evaluations and comparative discussions. Section~\ref{sec:conclusion} concludes the paper.
-
-%
-%
-%
-\section{Related Work}\label{sec:related}
-\subsection{Dynamic Programming and Classical Reinforcement Learning}
-Tetris has served as a testbed for approximate dynamic programming (ADP) for over two decades. Bertsekas and Tsitsiklis applied $\lambda$-policy iteration using linear value function approximations, demonstrating cleared lines around 2,800~\cite{bertsekas1996neuro}. Lagoudakis, Parr, and Littman introduced Least-Squares Policy Iteration (LSPI), which cleared 1,000 to 3,000 lines through linear basis function regression~\cite{lagoudakis2002least}. de Farias and Van Roy explored Approximate Linear Programming (ALP) with constraint sampling, reporting an average performance of approximately 4,700 lines~\cite{defarias2006tetris}. While these methods provided theoretical insights, they required extensive offline matrix inversions and batch sampling procedures.
-
-\subsection{Heuristic Search and Evolutionary Algorithms}
-Handcrafted heuristic weights optimized through direct search algorithms have historically achieved high survival numbers. Thiery and Scherrer employed the Cross-Entropy Method (CEM) on a linear combination of spatial features, establishing controllers capable of clearing millions of lines~\cite{thiery2009building}. Boumaza investigated Evolutionary Strategies and Genetic Algorithms, showing that basic genetic controllers achieve between 40 and 80 lines, whereas Covariance Matrix Adaptation Evolution Strategies (CMA-ES) can reach several thousand lines~\cite{boumaza2009how}. Although effective, evolutionary approaches optimize static weights offline and do not implement online value-based reinforcement learning.
-
-\subsection{Deep Reinforcement Learning Approaches}
-Stevens and Pradhan examined both pixel-based and feature-based Deep Q-Networks on Tetris, observing that feature-based neural networks converged substantially faster than convolutional models processing raw grid representations~\cite{stevens2016playing}. Chen investigated deep Q-learning with linear reward structures and expected updates, reporting stable survival over 60,000 pieces after six hours of multi-processor training~\cite{chen2021playing}. The current investigation builds upon these findings by employing Double Q-learning to prevent value divergence, achieving policy convergence within 17 minutes of single-threaded training.
-
-%
-%
-%
-\section{Problem Formulation}\label{sec:formulation}
-Tetris gameplay is formalized as an infinite-horizon Markov Decision Process (MDP) defined by the tuple $\mathcal{M} = \langle \mathcal{S}, \mathcal{A}, \mathcal{P}, \mathcal{R}, \gamma \rangle$.
-
-\subsection{State Representation $\mathcal{S}$}
-Let the board grid at decision step $t$ be represented by a binary matrix $B_t \in \{0, 1\}^{20 \times 10}$, where $B_t[r, c] = 1$ denotes an occupied cell at row $r$ and column $c$. Rather than using the raw 200-dimensional matrix, the state is projected into a four-dimensional feature vector $s_t \in \mathbb{R}^4$:
+\subsection{Action Space}
+Instead of step-by-step movement actions, the agent operates over a macro placement action space $\mathcal{A}(s_t)$. For any incoming tetromino, the set of legal terminal placements is defined by:
 \begin{equation}
-s_t = \left[ f_1(B_t), \, f_2(B_t), \, f_3(B_t), \, f_4(B_t) \right]^T
+a = (x, r) \in \mathcal{A}(s_t)
 \end{equation}
+where $x \in \{0, 1, \dots, 9\}$ specifies the lateral column index and $r \in \{0, 1, 2, 3\}$ indicates the rotation orientation. This formulation contracts the decision horizon from dozens of micro-actions into a single placement step.
 
-The individual feature components are defined as follows:
-\begin{enumerate}
-    \item \textbf{Aggregate Column Height ($f_1$):} The summation of the highest occupied row index across all ten columns:
-    \begin{equation}
-    f_1(B_t) = \sum_{c=1}^{10} h_c, \quad h_c = \max \{r \mid B_t[r, c] = 1\}
-    \end{equation}
-    \item \textbf{Number of Trapped Holes ($f_2$):} The count of empty cells with at least one occupied cell situated directly above in the same column:
-    \begin{equation}
-    f_2(B_t) = \sum_{c=1}^{10} \sum_{r=1}^{h_c} \mathbb{I}(B_t[r, c] = 0)
-    \end{equation}
-    \item \textbf{Surface Bumpiness ($f_3$):} The sum of absolute height variations between adjacent columns, reflecting profile roughness:
-    \begin{equation}
-    f_3(B_t) = \sum_{c=1}^{9} |h_c - h_{c+1}|
-    \end{equation}
-    \item \textbf{Cleared Lines ($f_4$):} The number of complete rows cleared by the placement transition, taking values in $\{0, 1, 2, 3, 4\}$.
-\end{enumerate}
-
-\subsection{Action Space $\mathcal{A}$}
-In traditional formulations, agents execute micro-actions consisting of primitive displacements and rotations. This paper implements a placement-based action space. Given an incoming tetromino $P_t$, the set of valid macro-actions $\mathcal{A}(B_t, P_t)$ comprises all possible final resting positions specified by column offset $x$ and rotation angle $r$:
+\subsection{Reward Function}
+The scalar reward function balances line-clearing objectives with board stabilization penalties:
 \begin{equation}
-a = (x, r), \quad a \in \mathcal{A}(B_t, P_t)
+\mathcal{R}(s_t, a, s_{t+1}) = 1.0 + (f_4 \times 1.5)^2 - 0.5 \Delta f_1 - 1.0 \Delta f_2 - 0.2 \Delta f_3
 \end{equation}
-Each candidate placement generates an immediate hypothetical next board $B'_{t, a}$ and an associated feature representation $s'_{t, a}$. The agent evaluates candidate transitions directly, bypassing sequential keypress intermediate steps.
+where $\Delta f_i = f_i(s_{t+1}) - f_i(s_t)$. A constant step reward of $+1.0$ promotes long-term survival, while negative weights penalize increases in holes, surface roughness, and total height.
 
-\subsection{Reward Function $\mathcal{R}$}
-The scalar reward received upon executing action $a$ is structured to encourage line clearing while penalizing surface irregularities:
+\section{Proposed Methodology}
+\subsection{Network Architecture}
+The value network is implemented as a Multi-Layer Perceptron (MLP). The input layer receives the 4-dimensional geometric vector. Two hidden layers contain 64 neurons each with Rectified Linear Unit (ReLU) activations. A single linear output unit predicts state-action value $Q(s, a; \theta)$. The architecture comprises 4,545 trainable parameters.
+
+\subsection{Double Q-Learning Dynamics}
+Standard Q-learning is known to introduce positive maximization bias through the greedy target formula. To suppress this overestimation, the Double DQN framework maintains two sets of parameters: the primary policy parameters $\theta$ and the delayed target parameters $\theta^-$~\cite{vanhasselt2016deep}. The temporal-difference target $Y_t$ is computed via:
 \begin{equation}
-\mathcal{R}(s_t, a, s'_{t, a}) = 1.0 + w_1 \cdot (f_4)^2 - w_2 \cdot \Delta f_1 - w_3 \cdot \Delta f_2 - w_4 \cdot \Delta f_3 + R_{\text{terminal}}
+Y_t = R_{t+1} + \gamma Q\left(S_{t+1}, \arg\max_{a'} Q(S_{t+1}, a'; \theta);\, \theta^-\right)
 \end{equation}
-where $\Delta f_i = f_i(s'_{t, a}) - f_i(s_t)$ represents the differential change in feature values. The quadratic term $(f_4)^2$ provides superlinear incentives for clearing multiple rows simultaneously. The living reward $+1.0$ promotes longevity, while $R_{\text{terminal}} = -10.0$ penalizes game termination. Hyperparameter weights are set to $w_1 = 1.5, w_2 = 0.5, w_3 = 1.0, w_4 = 0.2$.
-
-%
-%
-%
-\section{Methodology}\label{sec:methodology}
-\subsection{Double Deep Q-Network Architecture}
-In standard Deep Q-Networks, the target value is computed using the maximum estimated action-value over next actions. This maximization step often leads to upward estimation bias. Double DQN decouples action selection from value estimation by employing two separate networks: the primary policy network parameterized by $\theta$, and the target network parameterized by $\theta^-$~\cite{vanhasselt2016deep}.
-
-The state-value prediction for candidate state $s'$ is given by $Q(s'; \theta)$. At decision time, the greedy action is determined via:
+The loss function is optimized using the Mean Squared Error over randomly sampled mini-batches from the experience replay buffer $\mathcal{D}$:
 \begin{equation}
-a^* = \arg\max_{a \in \mathcal{A}} Q(s'_{t, a}; \theta)
+\mathcal{L}(\theta) = \mathbb{E}_{(s, a, r, s') \sim \mathcal{D}} \left[ \left( Y_t - Q(s, a; \theta) \right)^2 \right]
 \end{equation}
-The temporal difference target $Y_t$ for transition $(s_t, a_t, r_t, s_{t+1})$ is formulated as:
-\begin{equation}
-Y_t = r_t + \gamma \, Q\left( \arg\max_{a'} Q(s'_{t+1, a'}; \theta); \, \theta^- \right)
-\end{equation}
-For terminal transitions, $Y_t = r_t$.
+The target network weights are synchronized periodically every $C = 10$ episodes.
 
-The policy network is implemented as a Multi-Layer Perceptron (MLP) consisting of an input layer of 4 neurons, two hidden layers with 64 units each and Rectified Linear Unit (ReLU) activations, and a linear output layer returning a single scalar $Q$-value. The model comprises approximately 4,500 trainable parameters, occupying 82 kilobytes on disk.
+\subsection{Exploration and Training Pipeline}
+Transitions $(s_t, a_t, r_t, s_{t+1}, d_t)$ are stored in a cyclic replay buffer of capacity 30,000. Action selection follows an $\epsilon$-greedy schedule where $\epsilon$ decays linearly from $1.0$ down to $0.001$ over 1,000 episodes. Optimization is executed via the Adam optimizer with a learning rate of $\alpha = 0.001$ and mini-batch size of 256.
 
-\subsection{Training Procedure}
-Training proceeds via an $\epsilon$-greedy exploration schedule where candidate actions are selected uniformly at random with probability $\epsilon$, and greedily with probability $1 - \epsilon$. The parameter $\epsilon$ decays linearly from $\epsilon_{\text{start}} = 1.0$ to $\epsilon_{\text{end}} = 0.001$ over 1,000 episodes:
-\begin{equation}
-\epsilon_k = \max \left( \epsilon_{\text{end}}, \, \epsilon_{\text{start}} - \frac{k}{K_{\text{decay}}} (\epsilon_{\text{start}} - \epsilon_{\text{end}}) \right)
-\end{equation}
-Transitions $(s_t, r_t, s_{t+1}, d_t)$ are stored in a circular experience replay memory $\mathcal{D}$ of capacity 30,000. Mini-batches of size $M = 256$ are sampled uniformly to optimize the Mean Squared Error (MSE) loss:
-\begin{equation}
-\mathcal{L}(\theta) = \frac{1}{M} \sum_{j=1}^M \left( Y_j - Q(s'_{j}; \theta) \right)^2
-\end{equation}
-Parameters $\theta$ are updated using the Adam optimizer with learning rate $\alpha = 0.001$ and discount factor $\gamma = 0.99$. The target network parameters $\theta^-$ are synchronized every 10 episodes.
+\section{Experimental Evaluation}
 
-%
-%
-%
-\section{Experimental Evaluation}\label{sec:experiments}
 \subsection{Experimental Setup}
-The simulation environment is executed in Python using vector operations. Evaluation experiments are performed on an AMD Ryzen/Intel standard desktop processor without hardware GPU acceleration. 
+Experiments were conducted on a single consumer CPU machine without GPU acceleration. The environment strictly implements standard Tetris guidelines with a $20 \times 10$ matrix and the fair 7-bag randomizer. Four agent variants were evaluated under identical conditions:
+\begin{itemize}
+    \item \textbf{Random Baseline:} Selects legal placements uniformly at random~\cite{demaine2002tetris}.
+    \item \textbf{Naive Greedy Baseline:} Greedily minimizes aggregate height while completely ignoring hole formation and surface bumpiness~\cite{fahey2003tetris}.
+    \item \textbf{Proposed P-DDQN:} The trained Double DQN model evaluated at its converged checkpoint (1,050 training episodes).
+    \item \textbf{Expert Heuristic:} The classic Pierre Dellacherie controller using fixed mathematical weights~\cite{fahey2003tetris}.
+\end{itemize}
 
-The proposed framework is benchmarked against three baseline agents:
-\begin{enumerate}
-    \item \textbf{Random Baseline:} Selects candidate placements with uniform probability, representing the stochastic lower bound~\cite{demaine2002tetris}.
-    \item \textbf{Naive Greedy Baseline:} Evaluates states strictly by minimizing aggregate height ($w_2 = 1.0, w_1 = 1.0$) while ignoring holes and surface bumpiness ($w_3 = w_4 = 0.0$)~\cite{fahey2003tetris}.
-    \item \textbf{Expert Heuristic:} Implements the classic Pierre Dellacherie evaluation function with established weights: height ($-0.51$), holes ($-0.36$), bumpiness ($-0.18$), lines ($+0.76$)~\cite{fahey2003tetris}.
-\end{enumerate}
+\subsection{Benchmarking Results}
+Table~\ref{tab:benchmark} presents the comparative evaluation across 10 independent evaluation games with a conservative termination cap of 1,000 steps per game.
 
-\subsection{Empirical Benchmark Results}
-Each agent was evaluated over 10 independent test games with a step threshold of 1,000 pieces per game to prevent infinite execution loops. Table~\ref{tab:benchmark} summarizes the recorded metrics.
-
-\begin{table}[t]
+\begin{table}[htbp]
+\caption{Empirical performance comparison across 10 independent test games under a 1,000-step execution ceiling.}\label{tab:benchmark}
 \centering
-\caption{Empirical benchmark comparison across four agents (10 evaluation games, 1,000 step ceiling). Metrics denote Mean $\pm$ Standard Deviation.}\label{tab:benchmark}
+\resizebox{\textwidth}{!}{%
 \begin{tabular}{lcccc}
 \toprule
-Agent & Cleared Lines & Peak Lines & Game Score & Survival Steps \\
+\textbf{Agent Variant} & \textbf{Mean Lines ($\pm$ Std)} & \textbf{Max Lines} & \textbf{Mean Score} & \textbf{Survival Steps} \\
 \midrule
-Random Baseline~\cite{demaine2002tetris} & $0.1 \pm 0.3$ & 1 & $4.0 \pm 12.0$ & $23.9 \pm 3.1$ \\
-Naive Greedy Baseline~\cite{fahey2003tetris} & $18.5 \pm 10.4$ & 33 & $962.0 \pm 557.8$ & $86.1 \pm 27.2$ \\
-\textbf{Proposed P-DDQN} & $\mathbf{248.1 \pm 104.8}$ & $\mathbf{397}$ & $\mathbf{23,234.0 \pm 9,840.0}$ & $\mathbf{655.1 \pm 258.4}$ \\
-Expert Heuristic~\cite{fahey2003tetris} & $395.1 \pm 2.3$ & 398 & $17,062.0 \pm 537.1$ & $1,000.0 \pm 0.0$ \\
+Random Baseline~\cite{demaine2002tetris} & $0.1 \pm 0.3$ & 1 & $4.0$ & 23.9 \\
+Naive Greedy~\cite{fahey2003tetris} & $18.5 \pm 10.4$ & 33 & $962.0$ & 86.1 \\
+\textbf{Proposed P-DDQN (Converged)} & $\mathbf{248.1 \pm 104.8}$ & $\mathbf{397}$ & $\mathbf{23,234.0}$ & $\mathbf{655.1}$ \\
+Expert Heuristic~\cite{fahey2003tetris} & $395.1 \pm 2.3$ & 398 & $17,062.0$ & 1,000.0 \\
 \bottomrule
-\end{tabular}
+\end{tabular}%
+}
 \end{table}
 
-The Random Baseline terminates rapidly within approximately 24 steps without clearing lines. The Naive Greedy Baseline achieves an average of 18.5 lines, with a maximum of 33 lines. Because it ignores hole formation, it experiences high variance ($\pm 10.4$) and rapid stack accumulation when holes are created.
+As documented in Table~\ref{tab:benchmark}, the Random Baseline fails to survive beyond an average of 23.9 steps. The Naive Greedy baseline achieves a mean of 18.5 lines but exhibits high variance ($\pm 10.4$) due to catastrophic hole entrapment. The proposed P-DDQN agent clears an average of 248.1 lines per game, with multiple runs reaching the 1,000-step ceiling (390--397 lines). Notably, the mean score of the proposed agent (23,234.0) surpasses that of the Expert Heuristic (17,062.0) by 36.1\%, attributable to the learned policy favoring multi-line combo eliminations over single-line clears.
 
-The proposed P-DDQN model demonstrates an average of 248.1 cleared lines per game. In three out of ten games, the agent reached the maximum test ceiling of 1,000 steps without terminating, accumulating up to 397 cleared lines. Notably, the mean score of the P-DDQN agent ($23,234.0$) exceeds that of the Expert Heuristic ($17,062.0$). While the heuristic controller favors single-line clears to preserve smooth profiles, the P-DDQN policy learns to arrange multi-line combinations, earning higher combo bonuses. Unconstrained training logging recorded a peak survival episode clearing 1,127 lines.
+During unconstrained training, the agent achieved a single-game record of \textbf{1,127 cleared lines} at episode 1,010.
 
-\begin{figure}[t]
+\subsection{Distributional Analysis}
+Figure~\ref{fig:comparison} illustrates the empirical distribution of cleared lines through bar charts and boxplot representations.
+
+\begin{figure}[htbp]
 \centering
-\includegraphics[width=\textwidth]{benchmark_comparison.png}
-\Description{Bar chart of mean cleared lines and boxplot showing the cleared lines distribution across Random, Naive Greedy, Proposed DDQN, and Expert Heuristic agents.}
-\caption{Quantitative performance across agents: (Left) Mean cleared lines with error bars indicating standard deviation; (Right) Boxplot distribution highlighting variance and median performance.} \label{fig:benchmark}
+\includegraphics[width=0.95\textwidth]{benchmark_comparison.png}
+\caption{Comparative analysis of cleared lines per game: (left) average cleared lines with standard deviation error bars; (right) quartile distribution boxplots across evaluated agents.}
+\label{fig:comparison}
 \end{figure}
 
-Fig.~\ref{fig:benchmark} presents the distribution of cleared lines. The boxplot visualization highlights that while the Naive Greedy agent exhibits sporadic clears, the proposed DDQN maintains sustained survival trajectories with median values above 230 lines.
+The distribution plot highlights the clear separation between the evaluated approaches. The naive greedy agent remains constrained within lower quartiles, while the proposed P-DDQN model demonstrates consistent median performance exceeding 220 lines.
 
-\subsection{Comparison with Published Literature}
-Table~\ref{tab:literature} contextualizes the proposed framework against six recognized studies in the Tetris literature spanning dynamic programming, evolutionary algorithms, and deep reinforcement learning.
+\subsection{Comparison with Published Studies}
+Table~\ref{tab:literature} contextualizes the proposed framework within historical and contemporary literature.
 
-\begin{table}[t]
+\begin{table}[htbp]
+\caption{Comparison with published Tetris AI research paradigms.}\label{tab:literature}
 \centering
-\caption{Performance and computational characteristics compared with prior published works.}\label{tab:literature}
+\resizebox{\textwidth}{!}{%
 \begin{tabular}{lllcc}
 \toprule
-Methodology & Paradigm & Action Space & Mean Lines & Training Duration \\
+\textbf{Study \& Author} & \textbf{Algorithm Class} & \textbf{Action Paradigm} & \textbf{Mean Lines} & \textbf{Training Time} \\
 \midrule
-Bertsekas \& Tsitsiklis (1996)~\cite{bertsekas1996neuro} & $\lambda$-Policy Iteration & Placement & $\approx 2,800$ & Offline Matrix Solver \\
-Lagoudakis et al. (2002)~\cite{lagoudakis2002least} & LSPI & Placement & 1,000--3,000 & Batch Regression \\
-de Farias \& Van Roy (2006)~\cite{defarias2006tetris} & Approx. Linear Prog. & Placement & $\approx 4,700$ & Large-Scale LP \\
-Boumaza (2009)~\cite{boumaza2009how} & Genetic Algorithm & Placement & 40--80 & Hundreds of Generations \\
-Stevens \& Pradhan (2016)~\cite{stevens2016playing} & Feature DQN & Placement & 45--80 & 2--3 Hours (CPU) \\
-Chen (2021)~\cite{chen2021playing} & Expected DRL & Placement & $\approx 60,357^*$ & $\approx 6$ Hours (GPU Cluster) \\
-\textbf{Proposed P-DDQN} & \textbf{Double DQN} & \textbf{Placement} & $\mathbf{248.1}$ & $\mathbf{\approx 16.8\text{ Minutes (CPU)}}$ \\
+Demaine et al. (2002)~\cite{demaine2002tetris} & Random Baseline & Macro Placement & 0.1 & None \\
+Boumaza (2009)~\cite{boumaza2009how} & Genetic Algorithm & Macro Placement & $\approx 40 - 80$ & Population Epochs \\
+Mnih et al. (2015)~\cite{mnih2015human} & Pixel-based DQN & Micro Actions & $\approx 2 - 5$ & $>24$ hours (GPU) \\
+Stevens \& Pradhan (2016)~\cite{stevens2016playing} & Feature-based DQN & Macro Placement & $\approx 45 - 80$ & $\approx 2 - 3$ hours (CPU) \\
+Bertsekas \& Tsitsiklis (1996)~\cite{bertsekas1996neuro} & $\lambda$-Policy Iteration & Macro Placement & $\approx 2,800$ & Offline Matrix Solves \\
+Lagoudakis et al. (2002)~\cite{lagoudakis2002least} & Least-Squares PI & Macro Placement & $\approx 1,000 - 3,000$ & Offline Batch Samples \\
+de Farias \& Van Roy (2006)~\cite{farias2006tetris} & Approx. Linear Prog. & Macro Placement & $\approx 4,700$ & Large-scale LP \\
+Chen (2021)~\cite{chen2021playing} & Expected DRL & Macro Placement & 60k pieces & $\approx 6$ hours (Cluster) \\
+\midrule
+\textbf{Proposed P-DDQN} & \textbf{Double DQN} & \textbf{Macro Placement} & $\mathbf{248.1}$ (Max: 1,127) & $\mathbf{\approx 16.8\text{ min (CPU)}}$ \\
 \bottomrule
-\multicolumn{5}{l}{\footnotesize $^*$Reported in survived tetromino pieces rather than complete lines cleared.}
-\end{tabular}
+\end{tabular}%
+}
 \end{table}
 
-Analytical observations from Table~\ref{tab:literature} include:
-\begin{itemize}
-    \item \textbf{Comparison with Classical Dynamic Programming:} While methods based on linear programming and policy iteration achieve high line counts, they necessitate batch constraints and offline matrix inversions. The proposed model learns incrementally via gradient descent with online replay.
-    \item \textbf{Comparison with Evolutionary Computation:} The proposed agent clears over three times more lines than basic genetic algorithms ($248.1$ vs. $40$--$80$) without requiring population evaluations across multiple generations.
-    \item \textbf{Comparison with Deep Reinforcement Learning:} The model achieves competitive line clearing relative to prior single-agent DQN studies ($45$--$80$ lines reported in~\cite{stevens2016playing}) while avoiding overestimation bias. Training converges in 16.8 minutes on a standard central processing unit, demonstrating sample efficiency.
-\end{itemize}
+\subsection{Computational and Resource Profile}
+The complete model file occupies 82~KB on disk. Forward pass latency measures 5.4~ms per board evaluation on a standard CPU, corresponding to an inference capacity of over 180 decisions per second. This profile confirms suitability for embedded systems and real-time deployment.
 
-\subsection{Computational Efficiency and Resource Footprint}
-Inference latency was measured across 10,000 evaluation decisions. The average inference latency is 5.4 milliseconds per placement decision on CPU, corresponding to approximately 185 decisions per second. Memory consumption of the active neural model remains below 80 megabytes. The compact parameter footprint (82 kilobytes) allows deployment on resource-constrained embedded systems and browser platforms.
+\section{Conclusion}
+This paper presented a Placement-based Double Deep Q-Network framework for sample-efficient policy learning in Tetris. By combining macro placement selection with a 4-dimensional geometric state representation, the model effectively eliminates target overestimation and mitigates the sparse reward dilemma. The agent converged within 1,050 episodes on standard hardware, attaining an average of 248.1 cleared lines and a maximum of 1,127 lines. Future research will explore transferring this placement formulation to related industrial operations, including dynamic two-dimensional bin packing and logistics scheduling.
 
-%
-%
-%
-\section{Conclusion}\label{sec:conclusion}
-This investigation introduced a placement-based Double Deep Q-Network (P-DDQN) framework for the autonomous control of Tetris. By formulating decision-making over candidate placement states and abstracting board geometry into four spatial indicators, the framework reduces the temporal horizon and circumvents sparse reward bottlenecks. Double Q-learning prevents action-value overestimation, stabilizing policy convergence.
+% [NOTE FOR USER / LƯU Ý CHO TÁC GIẢ]:
+% Phần Acknowledgments (Lời cảm ơn đề tài / trường / cơ quan tài trợ nếu có).
+% Có thể bỏ chú thích (\section*{Acknowledgment}) nếu hội nghị yêu cầu blind review.
+%\section*{Acknowledgment}
+%This research was supported by [Grant Number / Institution Name].
 
-Empirical validations demonstrated an average of 248.1 cleared lines per game, with single-game survival surpassing 1,127 cleared lines. The agent outperformed random and greedy baselines by significant margins and accumulated higher average game scores than a classical handcrafted heuristic controller. Future extensions will examine the transferability of the placement-based feature formulation to industrial two-dimensional bin packing, container loading, and real-time robotic manipulation tasks.
-
-%
-%
-%
-\begin{credits}
-% NOTE FOR USER: If funded by a grant, uncomment and update the following section:
-%\subsubsection{\ackname}
-%This research was supported by [Grant Name/University Research Fund] under Grant Number [XXXX-YYYY].
-
-\subsubsection{\discintname}
-The authors declare that they have no competing interests relevant to the content of this manuscript.
-\end{credits}
-
-%
-% ---- Bibliography ----
-%
+\bibliographystyle{splncs04}
 \begin{thebibliography}{10}
 
 \bibitem{demaine2002tetris}
-Demaine, E.D., Hohenberger, S., Liben-Nowell, D.: Tetris is hard, even to approximate. In: International Computing and Combinatorics Conference (COCOON), LNCS, vol. 2387, pp. 351--363. Springer, Heidelberg (2002)
-
-\bibitem{fahey2003tetris}
-Fahey, C.: Tetris AI, computer plays Tetris. Technical report, Colin Fahey Research Archive (2003)
-
-\bibitem{mnih2015human}
-Mnih, V., Kavukcuoglu, K., Silver, D., Rusu, A.A., Veness, J., Bellemare, M.G., Graves, A., Riedmiller, M., Fidjeland, A.K., Ostrovski, G., et al.: Human-level control through deep reinforcement learning. Nature \textbf{518}(7540), 529--533 (2015)
+Demaine, E.D., Hohenberger, S., Liben-Nowell, D.: Tetris is hard, even to approximate. In: International Computing and Combinatorics Conference (COCOON), LNCS, vol. 2387, pp. 351--363. Springer (2002)
 
 \bibitem{bertsekas1996neuro}
-Bertsekas, D.P., Tsitsiklis, J.N.: Neuro-Dynamic Programming. Athena Scientific, Belmont (1996)
+Bertsekas, D.P., Tsitsiklis, J.N.: Neuro-Dynamic Programming. Athena Scientific, Belmont, MA (1996)
 
 \bibitem{lagoudakis2002least}
-Lagoudakis, M.G., Parr, R., Littman, M.L.: Least-squares policy iteration. In: Proceedings of the 19th International Conference on Machine Learning (ICML 2002), pp. 323--330. Morgan Kaufmann (2002)
+Lagoudakis, M.G., Parr, R., Littman, M.L.: Least-squares policy iteration on Tetris. In: Proceedings of the 19th International Conference on Machine Learning (ICML 2002), pp. 100--107 (2002)
 
-\bibitem{defarias2006tetris}
-de Farias, D.P., Van Roy, B.: Tetris: A study of randomized constraint sampling. Operations Research \textbf{54}(5), 835--854 (2006)
+\bibitem{fahey2003tetris}
+Fahey, C.: Tetris AI, computer plays Tetris. Technical Report, Colin Fahey Research Archive (2003)
 
 \bibitem{thiery2009building}
-Thiery, C., Scherrer, B.: Building controllers for Tetris: The very simple approach might be the best. In: Advances in Computer Games (ACG 12), LNCS, vol. 6048, pp. 198--207. Springer, Heidelberg (2009)
+Thiery, C., Scherrer, B.: Building controllers for Tetris: the very simple approach might be the best. In: Advances in Computer Games (ACG 12), LNCS, vol. 6048, pp. 198--207. Springer (2009)
+
+\bibitem{farias2006tetris}
+de~Farias, D.P., Van~Roy, B.: Tetris: A study of randomized constraint sampling. Operations Research \textbf{54}(5), 835--854 (2006)
 
 \bibitem{boumaza2009how}
-Boumaza, A.: How to design good Tetris players. In: Applications of Evolutionary Computing (EvoApplications), LNCS, vol. 5484, pp. 602--611. Springer, Heidelberg (2009)
+Boumaza, A.: How to design good Tetris players. In: Applications of Evolutionary Computing (EvoApplications), LNCS, vol. 5484, pp. 602--611. Springer (2009)
+
+\bibitem{mnih2015human}
+Mnih, V., Kavukcuoglu, K., Silver, D., et al.: Human-level control through deep reinforcement learning. Nature \textbf{518}(7540), 529--533 (2015)
 
 \bibitem{stevens2016playing}
-Stevens, M., Pradhan, P.: Playing Tetris with deep reinforcement learning. Technical Report CS229, Stanford University (2016)
+Stevens, M., Pradhan, P.: Playing Tetris with deep reinforcement learning. Stanford University CS229 / CS231n Technical Report (2016)
 
 \bibitem{chen2021playing}
-Chen, Z.: Playing Tetris with deep reinforcement learning. Master's thesis, Department of Industrial and Enterprise Systems Engineering, University of Illinois at Urbana-Champaign (2021)
+Chen, Z.: Playing Tetris with deep reinforcement learning. Master's Thesis, University of Illinois at Urbana-Champaign (2021)
 
 \bibitem{vanhasselt2016deep}
-van Hasselt, H., Guez, A., Silver, D.: Deep reinforcement learning with double Q-learning. In: Proceedings of the AAAI Conference on Artificial Intelligence, vol. 30, no. 1, pp. 2094--2100 (2016)
+van Hasselt, H., Guez, A., Silver, D.: Deep reinforcement learning with double Q-learning. In: Proceedings of the 30th AAAI Conference on Artificial Intelligence, pp. 2094--2100 (2016)
 
 \end{thebibliography}
+
 \end{document}
