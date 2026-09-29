@@ -54,13 +54,28 @@ $$\mathcal{R} = w_1 \cdot (\text{Lines})^2 - w_2 \cdot \Delta \text{Holes} - w_3
 
 ```text
 REL_TetrisWithRL/
-├── PROPOSAL.md          # Bản đề cương chi tiết đề tài nghiên cứu Reinforcement Learning
-├── README.md            # Tài liệu hướng dẫn tổng quan & mô tả kho lưu trữ
-├── index.html           # Giao diện chính của game Cyber Tetris (HTML5 Canvas)
-├── style.css            # Thiết kế Cyberpunk Glassmorphism & layout tương thích thiết bị
-├── audio.js             # Bộ tổng hợp âm thanh 8-bit & nhạc nền (Web Audio API)
-├── tetris.js            # Engine game: 7-bag, ghost piece, wall kicks, hold piece, scoring
-└── note                 # Ghi chú môi trường phát triển & port cục bộ
+├── checkpoints/             # Lưu trữ trọng số mô hình đã huấn luyện (best_model.pth, latest_model.pth)
+├── reports/                 # Báo cáo kết quả và biểu đồ benchmark
+│   └── figures/             # Biểu đồ so sánh (benchmark_comparison.png, benchmark_results.json)
+├── logs/                    # TensorBoard logs giám sát tiến trình huấn luyện
+├── src/                     # Toàn bộ mã nguồn module Reinforcement Learning (PyTorch)
+│   ├── env/                 # Môi trường mô phỏng Tetris Gym tốc độ cao (tetris_env.py)
+│   ├── models/              # Kiến trúc mạng nơ-ron Deep Q-Network (dqn_model.py)
+│   ├── agents/              # DQN Agent (dqn_agent.py) & Heuristic Baseline (heuristic_agent.py)
+│   ├── train.py             # Pipeline huấn luyện tự động với Replay Buffer & Double DQN
+│   ├── evaluate.py          # Đánh giá benchmark định lượng & xuất biểu đồ khoa học
+│   └── play_ai.py           # Trực quan hóa AI chơi Tetris thời gian thực bằng Pygame
+├── audio.js                 # Bộ tổng hợp âm thanh 8-bit & nhạc nền (Web Audio API)
+├── index.html               # Giao diện chính game Cyber Tetris kèm chế độ AI Autoplay trên Web
+├── push_to_github.bat       # Script tự động đồng bộ mã nguồn lên GitHub (Windows CMD)
+├── push_to_github.ps1       # Script tự động đồng bộ mã nguồn lên GitHub (PowerShell)
+├── requirements.txt         # Danh sách thư viện Python phụ thuộc (PyTorch, Pygame, Matplotlib...)
+├── style.css                # Thiết kế Cyberpunk Glassmorphism & layout tương thích thiết bị
+├── tetris.js                # Engine game chuẩn Guideline kèm thuật toán AI Web Heuristic
+├── note                     # Ghi chú môi trường phát triển & port cục bộ
+├── TRAINING_PLAN.md         # Kế hoạch chi tiết huấn luyện mô hình RL nhiều giai đoạn
+├── PROPOSAL.md              # Bản đề cương chi tiết đề tài nghiên cứu Reinforcement Learning
+└── README.md                # Tài liệu hướng dẫn tổng quan & mô tả kho lưu trữ
 ```
 
 ---
@@ -114,20 +129,89 @@ Nhấp đúp chuột vào file `index.html` hoặc mở bằng trình duyệt (C
 
 ---
 
-## 📦 6. Lộ trình phát triển AI (RL Roadmap)
+## 🤖 6. Hướng dẫn Huấn luyện & Chạy AI (RL Execution Guide)
 
-1. [x] **Xây dựng đề cương nghiên cứu (Research Proposal):** Hoàn thành [`PROPOSAL.md`](PROPOSAL.md).
-2. [x] **Xây dựng game mô phỏng giao diện Cyberpunk:** Hoàn thành với HTML5/Canvas/Audio API.
-3. [ ] **Môi trường huấn luyện Python (Gym/Gymnasium Environment):** Xây dựng `tetris_env.py` hỗ trợ tính toán đặc trưng hình học siêu tốc với NumPy.
-4. [ ] **Huấn luyện mô hình Double DQN:** Cài đặt mạng nơ-ron PyTorch và chạy huấn luyện 5,000 episodes.
-5. [ ] **Đánh giá & Benchmark:** So sánh hiệu năng giữa thuật toán Heuristic (Dellacherie) và Deep Q-Network.
-6. [ ] **Tích hợp Model vào Web Visualizer:** Sử dụng ONNX Runtime Web để mô hình AI chơi trực tiếp trên trình duyệt.
+Dự án đã tích hợp đầy đủ pipeline Học tăng cường (Reinforcement Learning) từ môi trường mô phỏng Gym, mô hình Deep Q-Network đến các công cụ trực quan hóa thời gian thực.
+
+### 6.1. Cài đặt môi trường Python
+```bash
+pip install -r requirements.txt
+```
+
+### 6.2. Khởi chạy AI trực tiếp trên Trình duyệt Web (Web Autoplay)
+1. Mở file [index.html](index.html) hoặc chạy qua máy chủ HTTP:
+   ```bash
+   python -m http.server 8080
+   ```
+2. Mở trình duyệt tại **`http://localhost:8080`**.
+3. Nhấp nút **`🤖 BẬT AI AUTOPLAY`** ở góc phải: AI (dựa trên Heuristic Pierre Dellacherie & RL Policy) sẽ tự động tính toán thế cờ tối ưu, né hốc kẹt, làm phẳng bề mặt và dọn hàng liên tục!
 
 ---
 
-## 👤 Tác giả & Đóng góp
+### 6.3. Chạy giao diện Trực quan hóa Real-time bằng Pygame
+Bạn có thể theo dõi AI chơi game trực quan với bảng thông số đánh giá feature theo thời gian thực:
+```bash
+# Chạy với thuật toán Baseline Heuristic (Dellacherie)
+python src/play_ai.py --agent heuristic --fps 20
+
+# Chạy với mô hình Deep Q-Network đã huấn luyện
+python src/play_ai.py --agent dqn --model-path checkpoints/best_model.pth --fps 20
+```
+* **Phím tắt trong cửa sổ Pygame:**
+  * `Phím cách (Space)`: Tạm dừng / Tiếp tục.
+  * `Mũi tên Lên / Xuống (↑ / ↓)`: Tăng / Giảm tốc độ khung hình (1 – 120 FPS).
+  * `Phím R`: Chơi lại ván mới.
+  * `Phím H`: Chuyển sang tác tử Heuristic.
+  * `Phím D`: Chuyển sang tác tử DQN.
+
+---
+
+### 6.4. Huấn luyện mô hình Double Deep Q-Network (Training)
+Chạy script huấn luyện tự động với Experience Replay và Target Network:
+```bash
+# Huấn luyện nhanh 200 episodes
+python src/train.py --episodes 200 --batch-size 128 --decay-episodes 150
+
+# Huấn luyện quy mô lớn đầy đủ (2000 episodes) kèm TensorBoard
+python src/train.py --episodes 2000 --batch-size 512 --decay-episodes 1200
+```
+* **Theo dõi quá trình huấn luyện bằng TensorBoard:**
+  ```bash
+  tensorboard --logdir logs
+  ```
+  Truy cập `http://localhost:6006` để xem đồ thị Loss, Cleared Lines, Score, và Epsilon.
+* Trọng số mô hình tốt nhất được tự động lưu tại `checkpoints/best_model.pth`.
+
+---
+
+### 6.5. Đánh giá Benchmark & Xuất biểu đồ khoa học (Evaluation)
+Chạy thử nghiệm so sánh định lượng giữa **Random Agent vs Heuristic Baseline vs DDQN Agent**:
+```bash
+python src/evaluate.py --games 10 --output-dir reports/figures
+```
+* Script tự động xuất bảng so sánh thống kê (Mean Lines, Max Lines, Mean Score).
+* Tự động lưu biểu đồ so sánh vào: `reports/figures/benchmark_comparison.png`.
+* Lưu dữ liệu JSON chi tiết vào: `reports/figures/benchmark_results.json`.
+
+---
+
+## 📦 7. Lộ trình phát triển đề tài (Implementation Roadmap)
+
+1. [x] **Xây dựng đề cương nghiên cứu khoa học:** Hoàn thành [`PROPOSAL.md`](PROPOSAL.md).
+2. [x] **Giao diện game Cyberpunk Arcade:** HTML5 Canvas, Web Audio API, Neon effects ([`index.html`](index.html)).
+3. [x] **Môi trường Tetris Gym tốc độ cao:** [`src/env/tetris_env.py`](src/env/tetris_env.py) trích xuất 4 đặc trưng hình học.
+4. [x] **Baseline Heuristic Agent:** [`src/agents/heuristic_agent.py`](src/agents/heuristic_agent.py) thuật toán Dellacherie.
+5. [x] **Kiến trúc Deep Q-Network & Double DQN:** [`src/models/dqn_model.py`](src/models/dqn_model.py) & [`src/agents/dqn_agent.py`](src/agents/dqn_agent.py).
+6. [x] **Pipeline Huấn luyện & Checkpoint:** [`src/train.py`](src/train.py) hỗ trợ TensorBoard & Replay Buffer.
+7. [x] **Hệ thống Đánh giá Benchmark & Đồ thị:** [`src/evaluate.py`](src/evaluate.py) xuất biểu đồ Boxplot/Barchart.
+8. [x] **Demo Trực quan hóa:** Desktop Pygame [`src/play_ai.py`](src/play_ai.py) và Web Autoplay trực tiếp trên trình duyệt.
+
+---
+
+## 👤 8. Tác giả & Đóng góp
 * **Họ và tên:** Eddie / Khang
 * **Kho lưu trữ:** [github.com/Eddie0517/REL_TetrisWithRL](https://github.com/Eddie0517/REL_TetrisWithRL)
 * **Môn học:** Reinforcement Learning (REL)
 
 *Giữ bản quyền mã nguồn theo giấy phép MIT.*
+

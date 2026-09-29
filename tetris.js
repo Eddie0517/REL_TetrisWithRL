@@ -117,6 +117,7 @@
 
   const btnPause = document.getElementById('btn-pause');
   const btnRestart = document.getElementById('btn-restart');
+  const btnAiPlay = document.getElementById('btn-ai-play');
   const btnSound = document.getElementById('btn-sound');
   const iconSoundOn = document.getElementById('icon-sound-on');
   const iconSoundOff = document.getElementById('icon-sound-off');
@@ -145,6 +146,8 @@
   let isGameOver = false;
   let isPaused = false;
   let isStarted = false;
+  let isAiMode = false;
+  let aiActionTimer = null;
 
   // Particle System & Floating texts
   let particles = [];
@@ -440,6 +443,130 @@
     }
 
     drawNextPreviews();
+
+    // Trigger AI move if autoplay is active
+    if (isAiMode && !isGameOver && !isPaused) {
+      if (aiActionTimer) clearTimeout(aiActionTimer);
+      aiActionTimer = setTimeout(triggerAiStep, 90);
+    }
+  }
+
+  // --- AI DECISION ENGINE (Pierre Dellacherie / RL Heuristic) ---
+  function evaluateSimulatedBoard(simBoard) {
+    const heights = new Array(COLS).fill(0);
+    for (let c = 0; c < COLS; c++) {
+      for (let r = 0; r < ROWS; r++) {
+        if (simBoard[r][c] !== 0) {
+          heights[c] = ROWS - r;
+          break;
+        }
+      }
+    }
+
+    let aggHeight = 0;
+    for (let c = 0; c < COLS; c++) aggHeight += heights[c];
+
+    let holes = 0;
+    for (let c = 0; c < COLS; c++) {
+      const h = heights[c];
+      if (h > 0) {
+        for (let r = ROWS - h; r < ROWS; r++) {
+          if (simBoard[r][c] === 0) holes++;
+        }
+      }
+    }
+
+    let bumpiness = 0;
+    for (let c = 0; c < COLS - 1; c++) {
+      bumpiness += Math.abs(heights[c] - heights[c + 1]);
+    }
+
+    return { aggHeight, holes, bumpiness };
+  }
+
+  function findBestAiMove() {
+    if (!currentPiece) return null;
+    let bestScore = -Infinity;
+    let bestMove = null;
+
+    let testMatrix = currentPiece.matrix;
+    for (let rot = 0; rot < 4; rot++) {
+      for (let testX = -3; testX < COLS + 3; testX++) {
+        const dummyPiece = {
+          x: testX,
+          y: 0,
+          matrix: testMatrix
+        };
+
+        if (collide(board, dummyPiece, 0, 0)) continue;
+
+        let dropY = 0;
+        while (!collide(board, dummyPiece, 0, dropY + 1)) {
+          dropY++;
+        }
+        dummyPiece.y = dropY;
+
+        // Build temporary board
+        const simBoard = [];
+        for (let r = 0; r < ROWS; r++) {
+          simBoard.push(board[r].map(cell => (cell ? 1 : 0)));
+        }
+
+        for (let py = 0; py < testMatrix.length; py++) {
+          for (let px = 0; px < testMatrix[py].length; px++) {
+            if (testMatrix[py][px] !== 0) {
+              const by = dummyPiece.y + py;
+              const bx = dummyPiece.x + px;
+              if (by >= 0 && by < ROWS && bx >= 0 && bx < COLS) {
+                simBoard[by][bx] = 1;
+              }
+            }
+          }
+        }
+
+        // Count cleared lines
+        let linesCleared = 0;
+        for (let r = ROWS - 1; r >= 0; r--) {
+          if (simBoard[r].every(cell => cell !== 0)) {
+            linesCleared++;
+            simBoard.splice(r, 1);
+            simBoard.unshift(new Array(COLS).fill(0));
+            r++;
+          }
+        }
+
+        const { aggHeight, holes, bumpiness } = evaluateSimulatedBoard(simBoard);
+
+        // Pierre Dellacherie Heuristic:
+        // Score = -0.51 * Height + 0.76 * Lines - 0.36 * Holes - 0.18 * Bumpiness
+        const score = -0.51 * aggHeight + 0.76 * linesCleared - 0.36 * holes - 0.18 * bumpiness;
+
+        if (score > bestScore) {
+          bestScore = score;
+          bestMove = { rot, x: testX, matrix: testMatrix };
+        }
+      }
+
+      testMatrix = rotate(testMatrix, 1);
+    }
+
+    return bestMove;
+  }
+
+  function triggerAiStep() {
+    if (!isAiMode || isPaused || isGameOver || !currentPiece) return;
+
+    const move = findBestAiMove();
+    if (move) {
+      currentPiece.matrix = move.matrix;
+      currentPiece.x = move.x;
+      // Slight smooth delay so hard drop animation looks natural
+      setTimeout(() => {
+        if (isAiMode && !isPaused && !isGameOver && currentPiece) {
+          playerHardDrop();
+        }
+      }, 70);
+    }
   }
 
   function handleGameOver() {
@@ -904,6 +1031,21 @@
   // UI Button Bindings
   btnPause.addEventListener('click', togglePause);
   btnRestart.addEventListener('click', startGame);
+
+  if (btnAiPlay) {
+    btnAiPlay.addEventListener('click', () => {
+      isAiMode = !isAiMode;
+      btnAiPlay.classList.toggle('active', isAiMode);
+      btnAiPlay.textContent = isAiMode ? '⚡ AI ĐANG CHƠI (TẮT)' : '🤖 BẬT AI AUTOPLAY';
+      statusTextEl.textContent = isAiMode ? 'AI AUTOPLAY' : (isPaused ? 'TẠM DỪNG' : 'ĐANG CHƠI');
+      if (isAiMode) {
+        if (!isStarted || isGameOver) {
+          startGame();
+        }
+        triggerAiStep();
+      }
+    });
+  }
 
   btnOverlayAction.addEventListener('click', () => {
     if (!isStarted || isGameOver) {

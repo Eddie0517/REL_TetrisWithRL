@@ -511,6 +511,33 @@ kbd {
   color: #ff5599;
 }
 
+.btn-ai {
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.25), rgba(0, 240, 255, 0.25));
+  border: 1px solid rgba(168, 85, 247, 0.5);
+  color: #d8b4fe;
+  box-shadow: 0 0 10px rgba(168, 85, 247, 0.2);
+}
+
+.btn-ai:hover {
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.45), rgba(0, 240, 255, 0.45));
+  border-color: #a855f7;
+  color: #fff;
+  box-shadow: 0 0 16px rgba(168, 85, 247, 0.5);
+}
+
+.btn-ai.active {
+  background: linear-gradient(135deg, #a855f7, #00f0ff);
+  color: #070913;
+  font-weight: 800;
+  box-shadow: 0 0 20px rgba(0, 240, 255, 0.7);
+  animation: ai-pulse 1.5s infinite alternate;
+}
+
+@keyframes ai-pulse {
+  from { box-shadow: 0 0 10px rgba(168, 85, 247, 0.6); }
+  to { box-shadow: 0 0 25px rgba(0, 240, 255, 0.9); }
+}
+
 /* Status Card */
 .game-status-card {
   gap: 12px;
