@@ -73,7 +73,7 @@ REL_TetrisWithRL/
 ├── requirements.txt         # Danh sách thư viện Python phụ thuộc (PyTorch, Pygame, Matplotlib...)
 ├── style.css                # Thiết kế Cyberpunk Glassmorphism & layout tương thích thiết bị
 ├── tetris.js                # Engine game chuẩn Guideline kèm thuật toán AI Web Heuristic
-├── note                     # Ghi chú môi trường phát triển & port cục bộ
+├── SCOPUS_RESEARCH_ROADMAP.md # Kế hoạch nghiên cứu & xuất bản bài báo khoa học Scopus Q4
 ├── TRAINING_PLAN.md         # Kế hoạch chi tiết huấn luyện mô hình RL nhiều giai đoạn
 ├── PROPOSAL.md              # Bản đề cương chi tiết đề tài nghiên cứu Reinforcement Learning
 └── README.md                # Tài liệu hướng dẫn tổng quan & mô tả kho lưu trữ
