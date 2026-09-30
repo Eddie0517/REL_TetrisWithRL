@@ -32,16 +32,16 @@ Dưới đây là **Bảng đối chiếu chuẩn mực toàn diện (Master Fin
 | STT | Tác tử / Nghiên cứu & Tác giả | Đơn vị / Hội nghị | Trường phái & Thuật toán | Biểu diễn trạng thái & Hành động | Số hàng dọn TB (Mean Lines) | Điểm TB (Mean Score) | Số bước sống sót (Survival Steps) | Thời gian huấn luyện / Chi phí tính toán | Kích thước / Độ phức tạp mô hình |
 | :---: | :--- | :--- | :--- | :--- | :---: | :---: | :---: | :---: | :---: |
 | **I** | **NHÓM 4 TÁC TỬ ĐỐI CHUẨN THỰC NGHIỆM CHÍNH THỨC (OFFICIAL 4-AGENT BENCHMARK)** | | | | | | | | |
-| 1 | **Random Baseline**<br>*(Demaine et al., 2002 [1])* | MIT / Springer<br>*(COCOON 2002)* | Ngẫu nhiên<br>*(Random Placement)* | Macro Placement $(x, r)$ ngẫu nhiên | **0.1** $\pm 0.3$<br>*(Max: 1)* | **4.0** $\pm 12.0$ | **23.9** khối | 0<br>*(Không học)* | 0 tham số<br>*(Vô hướng)* |
-| 2 | **Naive Greedy**<br>*(Fahey, 2003 [6])* | Colin Fahey<br>*(Archive Report)* | Heuristic đơn biến<br>*(Min-Height Only)* | 1D Aggregate Height, Macro $(x, r)$ | **18.5** $\pm 10.4$<br>*(Max: 33)* | **962.0** $\pm 557.8$ | **86.1** khối | 0<br>*(Quy tắc tĩnh)* | Quy tắc đơn biến<br>*(Bỏ qua Holes)* |
-| 3 | **Expert Heuristic**<br>*(Pierre Dellacherie, 2003 [6])* | Colin Fahey<br>*(Mathematical Heuristic)* | Trọng số giải tích tối ưu<br>*(Handcrafted Weights)* | 6D Features (Holes, Transitions...), Macro $(x, r)$ | **395.1** $\pm 2.3$<br>*(Max: 398*)* | **17,062.0** $\pm 537.1$ | **1,000.0** khối*<br>*(Chạm trần)* | 0<br>*(Đã tối ưu giải tích trước)* | Trọng số cố định<br>*(Độ trễ ~62.8 ms)* |
+| 1 | **Random Baseline**<br>*(Demaine et al. [1])* | MIT / Springer<br>*(COCOON 2002)* | Ngẫu nhiên<br>*(Random Placement)* | Macro Placement $(x, r)$ ngẫu nhiên | **0.1** $\pm 0.3$<br>*(Max: 1)* | **4.0** $\pm 12.0$ | **23.9** khối | 0<br>*(Không học)* | 0 tham số<br>*(Vô hướng)* |
+| 2 | **Naive Greedy**<br>*(Fahey [6])* | Colin Fahey<br>*(Archive Report)* | Heuristic đơn biến<br>*(Min-Height Only)* | 1D Aggregate Height, Macro $(x, r)$ | **18.5** $\pm 10.4$<br>*(Max: 33)* | **962.0** $\pm 557.8$ | **86.1** khối | 0<br>*(Quy tắc tĩnh)* | Quy tắc đơn biến<br>*(Bỏ qua Holes)* |
+| 3 | **Expert Heuristic**<br>*(Pierre Dellacherie [6])* | Colin Fahey<br>*(Mathematical Heuristic)* | Trọng số giải tích tối ưu<br>*(Handcrafted Weights)* | 6D Features (Holes, Transitions...), Macro $(x, r)$ | **395.1** $\pm 2.3$<br>*(Max: 398*)* | **17,062.0** $\pm 537.1$ | **1,000.0** khối*<br>*(Chạm trần)* | 0<br>*(Đã tối ưu giải tích trước)* | Trọng số cố định<br>*(Độ trễ ~62.8 ms)* |
 | 4 | **🌟 Proposed P-DDQN**<br>*(Dự án của bạn - Converged)* | **Dự án `REL_TetrisWithRL`**<br>*(Bản thảo ICCIES 2027)* | **Placement-based Double DQN**<br>*(P-DDQN with Target Sync)* | **4D Geometric Features**, Macro Placement $(x, r)$ | **248.1** $\pm 104.8$<br>*(Kỷ lục: **1,127 hàng**)* | **23,234.0** $\pm 9,840$<br>*(🏆 **Vượt Heuristic 36%**)* | **655.1** khối<br>*(Max: chạm trần 1,000)* | **~ 16.8 phút**<br>*(1,050 ep trên CPU)* | **~ 82 KB**<br>*(MLP 4.5k params, 5.4 ms)* |
 | **II** | **NHÓM CÔNG TRÌNH KHOA HỌC QUỐC TẾ ĐỐI CHIẾU (INTERNATIONAL LITERATURE BENCHMARK)** | | | | | | | | |
-| 5 | **Stevens & Pradhan (2016)** [3] | Stanford University<br>*(CS229 / CS231n)* | Feature-based Deep Q-Network<br>*(DQN đơn - Single Net)* | 4D Features (Height, Holes...), Macro $(x, r)$ | **~ 45 – 80** hàng | ~ 180 điểm | ~ 180 khối | ~ 2 – 3 giờ<br>*(CPU cá nhân)* | ~ 82 KB<br>*(Bị overestimation bias)* |
-| 6 | **Bertsekas & Tsitsiklis (1996)** [7] | MIT<br>*(Athena Scientific)* | $\lambda$-Policy Iteration<br>*(Approximate Dynamic Prog.)* | Linear Feature Approximation, Macro $(x, r)$ | **~ 2,800** hàng<br>*(TD cơ bản: ~35)* | ~ 3,000 điểm | ~ 3,000 khối | Giải ma trận lặp offline<br>*(Tính toán ma trận lớn)* | Bảng trọng số tuyến tính<br>*(Không học online được)* |
-| 7 | **Lagoudakis et al. (2002)** [8] | ICML 2002<br>*(Duke / Rutgers Univ.)* | Least-Squares Policy Iteration<br>*(LSPI)* | 4–6 Linear Basis Functions, Macro $(x, r)$ | **~ 1,000 – 3,000** hàng | ~ 3,500 điểm | ~ 3,500 khối | Lấy mẫu ma trận lớn offline<br>*(Batch Trajectory)* | Vector trọng số tuyến tính |
-| 8 | **de Farias & Van Roy (2006)** [9] | Stanford University<br>*(Operations Research)* | Approximate Linear Prog.<br>*(ALP)* | Constraint Sampling + Basis Functions, Macro $(x, r)$ | **~ 4,700** hàng | ~ 5,000 điểm | ~ 5,000 khối | Quy hoạch tuyến tính lớn<br>*(LP Solver quy mô cao)* | Hàm xấp xỉ tuyến tính |
-| 9 | **Ziao Chen (2021)** [5] | Univ. of Illinois (UIUC)<br>*(Master Thesis)* | Expected DRL + Linear Reward<br>*(EDRL)* | Feature Vector + Reward Shaping, Macro $(x, r)$ | **~ 60,357 khối**<br>*(Thời gian sống)* | **~ 40,163** điểm | ~ 60,357 khối | ~ 6 giờ<br>*(GPU Cluster đa nhân)* | ~ 120 KB<br>*(Cần tài nguyên lớn)* |
+| 5 | **Stevens & Pradhan** [3] | Stanford University<br>*(CS229 / CS231n)* | Feature-based Deep Q-Network<br>*(DQN đơn - Single Net)* | 4D Features (Height, Holes...), Macro $(x, r)$ | **~ 45 – 80** hàng | ~ 180 điểm | ~ 180 khối | ~ 2 – 3 giờ<br>*(CPU cá nhân)* | ~ 82 KB<br>*(Bị overestimation bias)* |
+| 6 | **Bertsekas & Tsitsiklis** [7] | MIT<br>*(Athena Scientific)* | $\lambda$-Policy Iteration<br>*(Approximate Dynamic Prog.)* | Linear Feature Approximation, Macro $(x, r)$ | **~ 2,800** hàng<br>*(TD cơ bản: ~35)* | ~ 3,000 điểm | ~ 3,000 khối | Giải ma trận lặp offline<br>*(Tính toán ma trận lớn)* | Bảng trọng số tuyến tính<br>*(Không học online được)* |
+| 7 | **Lagoudakis et al.** [8] | ICML 2002<br>*(Duke / Rutgers Univ.)* | Least-Squares Policy Iteration<br>*(LSPI)* | 4–6 Linear Basis Functions, Macro $(x, r)$ | **~ 1,000 – 3,000** hàng | ~ 3,500 điểm | ~ 3,500 khối | Lấy mẫu ma trận lớn offline<br>*(Batch Trajectory)* | Vector trọng số tuyến tính |
+| 8 | **de Farias & Van Roy** [9] | Stanford University<br>*(Operations Research)* | Approximate Linear Prog.<br>*(ALP)* | Constraint Sampling + Basis Functions, Macro $(x, r)$ | **~ 4,700** hàng | ~ 5,000 điểm | ~ 5,000 khối | Quy hoạch tuyến tính lớn<br>*(LP Solver quy mô cao)* | Hàm xấp xỉ tuyến tính |
+| 9 | **Ziao Chen** [5] | Univ. of Illinois (UIUC)<br>*(Master Thesis)* | Expected DRL + Linear Reward<br>*(EDRL)* | Feature Vector + Reward Shaping, Macro $(x, r)$ | **~ 60,357 khối**<br>*(Thời gian sống)* | **~ 40,163** điểm | ~ 60,357 khối | ~ 6 giờ<br>*(GPU Cluster đa nhân)* | ~ 120 KB<br>*(Cần tài nguyên lớn)* |
 
 *\*Ghi chú:* Giá trị của Expert Heuristic và các ván test của Proposed P-DDQN được giới hạn ở ngưỡng kiểm thử an toàn 1,000 steps. Trong quá trình tự học không giới hạn trần bước, Proposed P-DDQN đã xác lập kỷ lục thực tế **1,127 hàng dọn sạch** tại episode 1,010.
 
@@ -60,7 +60,7 @@ Dưới đây là **Bảng đối chiếu chuẩn mực toàn diện (Master Fin
    * Mô hình của bạn học thích nghi trực tuyến liên tục (*Online Experience Replay*), cân bằng tối ưu giữa hiệu năng dọn hàng và độ phức tạp thuật toán.
 4. **Vượt trội chuyên môn về Điểm số so với Pierre Dellacherie (Heuristic Chuyên gia):**
    * Mặc dù Dellacherie sống sót lâu nhờ xếp an toàn, nhưng điểm số trung bình chỉ đạt 17,062.0.
-   * Tác tử của bạn đạt điểm số trung bình **23,234.0** (vượt **36.1%**), nhờ mạng nơ-ron tự khám phá ra chiến thuật mạo hiểm có tính toán: xếp bằng bề mặt để dọn các combo kép (Double, Triple, Tetris) với phần thưởng phi tuyến lũy thừa bậc hai $(f_4 	imes 1.5)^2$.
+   * Tác tử của bạn đạt điểm số trung bình **23,234.0** (vượt **36.1%**), nhờ mạng nơ-ron tự khám phá ra chiến thuật mạo hiểm có tính toán: xếp bằng bề mặt để dọn các combo kép (Double, Triple, Tetris) với phần thưởng phi tuyến lũy thừa bậc hai $(f_4 \times 1.5)^2$.
 
 ---
 
@@ -68,7 +68,7 @@ Dưới đây là **Bảng đối chiếu chuẩn mực toàn diện (Master Fin
 
 Kiểm thử được tiến hành độc lập trên cùng một phân phối khối tetromino ngẫu nhiên giữa 4 tác tử (10 ván chơi mỗi tác tử, trần 1,000 steps):
 
-| Tiêu chí đánh giá | Random Baseline (Demaine 2002) | Naive Greedy (Fahey 2003) | Proposed DDQN Agent (Dự án bạn) | Expert Heuristic (Dellacherie 2003) |
+| Tiêu chí đánh giá | Random Baseline (Demaine) | Naive Greedy (Fahey) | Proposed DDQN Agent (Dự án bạn) | Expert Heuristic (Dellacherie) |
 | :--- | :---: | :---: | :---: | :---: |
 | **Điểm trung bình (Mean Score)** | `4.0` $\pm 12.0$ | **962.0** $\pm 557.8$ | **23,234.0** $\pm 9,840$ *(Vượt Heuristic!)* | **17,062.0** $\pm 537.1$ |
 | **Điểm số tối đa (Max Score)** | `40` | **1,800** | **39,640** | **17,900** |
@@ -109,7 +109,7 @@ Dữ liệu JSON thô chi tiết cho từng ván đấu được lưu tại:
 
 | Mô hình / Nghiên cứu đối chứng (Baseline Model) | Biểu diễn trạng thái & Hành động | Nguyên nhân dẫn đến kết quả thấp | Số hàng dọn trung bình (Mean Lines) | Tỷ lệ cải thiện của Dự án chúng ta |
 | :--- | :--- | :--- | :---: | :---: |
-| **1. Random Placement**<br>*(Demaine et al., 2002 [1])* | Placement $(x, r)$ ngẫu nhiên | Không có hàm giá trị, hành động vô hướng. | **0.0** $\pm 0.0$ | **Vượt trội tuyệt đối**<br>*(AI dọn 8.4 – 17 hàng)* |
+| **1. Random Placement**<br>*(Demaine et al. [1])* | Placement $(x, r)$ ngẫu nhiên | Không có hàm giá trị, hành động vô hướng. | **0.0** $\pm 0.0$ | **Vượt trội tuyệt đối**<br>*(AI dọn 8.4 – 17 hàng)* |
 | **2. Naive Greedy (Min-Height Only)**<br>*(Fahey 2003 / Stevens 2016 [3, 6])* | 1 Feature (Chiều cao cột $h_c$) | Bỏ qua lỗ hổng (*Holes*) và độ gồ ghề (*Bumpiness*), nhanh chóng tạo các hốc kẹt không thể cứu vãn. | **~ 1.8 – 2.4** hàng | **Gấp 3.5 – 4.5 lần**<br>*(+350% hiệu suất dọn hàng)* |
 | **3. Raw-Pixel Deep Q-Network**<br>*(Mnih et al., Nature 2015 [2])* | Pixel thô $20 \times 10$, Step-by-step (trái, phải, xoay) | Bị hiện tượng **Phần thưởng cực thưa (Sparse Rewards)**: AI phải bấm phím hàng chục bước mới rơi xong 1 khối gạch, mạng nơ-ron không phân bổ được tín dụng nhân quả (*Credit Assignment Failure*). | **~ 2.5 – 4.2** hàng<br>*(sau 1.000.000 steps)* | **Gấp 2.0 – 3.5 lần**<br>*(với thời gian train ngắn hơn 100 lần)* |
 | **4. Standard Q-Learning (Quadratic)**<br>*(Ziao Chen, UIUC 2021 Baseline [5])* | Geometric Features, $(\text{Lines})^2$ | Hàm thưởng bình phương khuyến khích AI chơi mạo hiểm để ăn 4 hàng, dẫn tới chết sớm ở giai đoạn đầu. | **~ 1,160 khối**<br>*(thời gian sống)* | **Độ ổn định cao hơn** ở số episode khởi điểm |
