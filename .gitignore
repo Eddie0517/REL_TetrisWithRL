@@ -20,5 +20,5 @@ Desktop.ini
 .DS_Store
 
 # Binaries and archives
-tools/
+tools/*.exe
 *.zip
